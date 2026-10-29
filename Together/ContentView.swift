@@ -1,17 +1,27 @@
-import SwiftUI
-import Playgrounds
 
-struct ContentView: View {
+import SwiftUI
+
+struct RootView: View {
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        TabView {
+            TodayView()
+                .tabItem {
+                    Label("Today", systemImage: "sun.max")
+                }
+
+            ProgressView()
+                .tabItem {
+                    Label("Progress", systemImage: "calendar")
+                }
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+        }
     }
 }
 
 #Preview {
-    ContentView()
-}
-
-#Playground {
-    _ = 1 + 2
+    RootView()
 }
