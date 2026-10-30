@@ -55,7 +55,7 @@ enum CheckInService {
 
         // create() fails if the document already exists.
         // This prevents overwriting an existing check-in.
-        try await db.runTransaction { transaction, errorPointer in
+        _ = try await db.runTransaction { transaction, errorPointer in
             do {
                 // Check whether today's check-in already exists.
                 let snapshot = try transaction.getDocument(ref)

@@ -64,7 +64,7 @@ struct TodayView: View {
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
 
-                        Text("Build a healthier routine")
+                        Text("Leetcode Daily Check In")
                             .font(.title2.bold())
 
                         Text("Show up for yourself and each other.")
