@@ -205,6 +205,7 @@ struct TodayView: View {
                 Text(errorMessage ?? "Please try again.")
             }
         }
+        
     }
 
     private func memberStatus(
@@ -616,6 +617,8 @@ struct SettingsView: View {
     @State private var statusMessage = ""
     @State private var showStatus = false
     @State private var showSignOut = false
+    @State private var memberCount = 0
+    @State private var groupListener: ListenerRegistration?
 
     private let db = Firestore.firestore()
 
@@ -670,22 +673,50 @@ struct SettingsView: View {
                             in: .whitespacesAndNewlines
                         ).isEmpty)
                     } else {
-                        LabeledContent("Group invite code", value: groupId)
+                        VStack(alignment: .leading, spacing: 16) {
 
-                        ShareLink(
-                            item: "Join me on Together! Open the app and enter this invite code: \(groupId)"
-                        ) {
-                            Label("Invite a Friend", systemImage: "square.and.arrow.up")
-                        }
+                            if memberCount < 2 {
+                                Label(
+                                    "Waiting for your friend",
+                                    systemImage: "clock"
+                                )
+                                .font(.headline)
 
-                        Button(role: .destructive) {
-                            statusMessage = "Leaving a group isn't enabled yet. Your shared history has been preserved."
-                            showStatus = true
-                        } label: {
-                            Label("Leave Group", systemImage: "rectangle.portrait.and.arrow.right")
+                                Text("Your shared space is ready. Share the code below with your friend.")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Label(
+                                    "You're connected!",
+                                    systemImage: "checkmark.circle.fill"
+                                )
+                                .font(.headline)
+                                .foregroundStyle(.green)
+
+                                Text("Both members have joined your shared space.")
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Text("Invite Code")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text(groupId)
+                                .font(.title2.bold())
+                                .textSelection(.enabled)
+
+                            Text("\(memberCount) / 2 members")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            if memberCount < 2 {
+                                ShareLink(
+                                    item: "Join me on Together! Enter this invite code: \(groupId)"
+                                ) {
+                                    Label("Invite a Friend", systemImage: "square.and.arrow.up")
+                                }
+                            }
                         }
-                    }
-                }
+                    }                }
 
                 Section("About") {
                     LabeledContent("App", value: "Together")
@@ -717,9 +748,41 @@ struct SettingsView: View {
                 Text(statusMessage)
             }
         }
+        .onAppear {
+            startGroupListener()
+        }
+        .onChange(of: groupId) { _, _ in
+            startGroupListener()
+        }
+        .onDisappear {
+            groupListener?.remove()
+            groupListener = nil
+        }
     }
 
     // MARK: Create a group
+    private func startGroupListener() {
+        groupListener?.remove()
+
+        guard !groupId.isEmpty else {
+            memberCount = 0
+            return
+        }
+
+        groupListener = db.collection("groups")
+            .document(groupId)
+            .addSnapshotListener { snapshot, error in
+
+                guard let data = snapshot?.data(),
+                      let members = data["memberIds"] as? [String] else {
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    memberCount = members.count
+                }
+            }
+    }
 
     @MainActor
     private func createGroup() async {
